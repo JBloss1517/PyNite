@@ -25,7 +25,7 @@ def simple_beam(length):
     # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
     SimpleBeam.AddMember("M1", "N1", "N2", 29000, 11400, 100, 150, 250, 20)
 
-    # Provide simple supports
+    # Supports: Pin, Pin
     SimpleBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
     SimpleBeam.DefineSupport("N2", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
 
@@ -65,7 +65,7 @@ def two_span_beam(length):
     TwoSpanBeam.AddMember("M1", "N1", "N2", 29000, 11400, 100, 150, 250, 20)
     TwoSpanBeam.AddMember("M2", "N2", "N3", 29000, 11400, 100, 150, 250, 20)
 
-    # Supports: Pin, Fixed
+    # Supports: Pin, Pin, Pin
     TwoSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
     TwoSpanBeam.DefineSupport("N2", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
     TwoSpanBeam.DefineSupport("N3", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
