@@ -32,9 +32,9 @@ SimpleBeam.AddMemberPtLoad("M1", "Fy", 5, 7 * 12)
 SimpleBeam.Analyze()
 
 # Print the shear, moment, and deflection diagrams
-SimpleBeam.GetMember("M1").PlotShear("Fy")
-SimpleBeam.GetMember("M1").PlotMoment("Mz")
-SimpleBeam.GetMember("M1").PlotDeflection("dy")
+# SimpleBeam.GetMember("M1").PlotShear("Fy")
+# SimpleBeam.GetMember("M1").PlotMoment("Mz")
+# SimpleBeam.GetMember("M1").PlotDeflection("dy")
 
 # Print reactions at each end of the beam
 print("Left Support Reaction: {Rxn:.2f} kip".format(Rxn = SimpleBeam.GetNode("N1").RxnFY))
