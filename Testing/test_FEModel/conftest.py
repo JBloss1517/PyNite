@@ -6,12 +6,13 @@
 import pytest
 from PyNite import FEModel3D
 
-
 @pytest.fixture
 def length():
     # 14ft = 168in
     return 14 * 12
 
+
+## Fixtures of different configuration
 
 @pytest.fixture
 def simple_beam(length):
@@ -23,7 +24,7 @@ def simple_beam(length):
 
     # Add a beam with the following properties:
     # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    SimpleBeam.AddMember("M1", "N1", "N2", 29000, 11400, 100, 150, 250, 20)
+    SimpleBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Pin
     SimpleBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -42,7 +43,7 @@ def pin_fixed_beam(length):
 
     # Add a beam with the following properties:
     # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    PinFixBeam.AddMember("M1", "N1", "N2", 29000, 11400, 100, 150, 250, 20)
+    PinFixBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Fixed
     PinFixBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -62,16 +63,43 @@ def two_span_beam(length):
 
     # Add a beam with the following properties:
     # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    TwoSpanBeam.AddMember("M1", "N1", "N2", 29000, 11400, 100, 150, 250, 20)
-    TwoSpanBeam.AddMember("M2", "N2", "N3", 29000, 11400, 100, 150, 250, 20)
+    TwoSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    TwoSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
 
-    # Supports: Pin, Pin, Pin
+    # Supports: Pin, Roller, Roller
     TwoSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
-    TwoSpanBeam.DefineSupport("N2", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
-    TwoSpanBeam.DefineSupport("N3", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
+    TwoSpanBeam.DefineSupport("N2", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+    TwoSpanBeam.DefineSupport("N3", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
 
     return TwoSpanBeam
 
+
+@pytest.fixture
+def three_span_beam(length):
+    ThreeSpanBeam = FEModel3D()
+
+    # Add nodes (14 ft = 168 in apart)
+    ThreeSpanBeam.AddNode("N1", 0, 0, 0)
+    ThreeSpanBeam.AddNode("N2", length, 0, 0)
+    ThreeSpanBeam.AddNode("N3", length * 2, 0, 0)
+    ThreeSpanBeam.AddNode("N4", length * 3, 0, 0)
+
+    # Add a beam with the following properties:
+    # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
+    ThreeSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    ThreeSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    ThreeSpanBeam.AddMember("M3", "N3", "N4", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+
+    # Supports: Pin, Roller, Roller, Roller
+    ThreeSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
+    ThreeSpanBeam.DefineSupport("N2", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+    ThreeSpanBeam.DefineSupport("N3", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+    ThreeSpanBeam.DefineSupport("N3", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+
+    return ThreeSpanBeam
+
+
+## Beam fixtures with different load configurations
 
 @pytest.fixture
 def simple_beam_pt_load_1(simple_beam, length):
@@ -212,3 +240,42 @@ def two_span_beam_dist_load_1(two_span_beam, length):
     _two_span_beam.Analyze()
 
     return _two_span_beam
+
+
+@pytest.fixture
+def three_span_beam_dist_load_1(three_span_beam, length):
+    # Add a distributed load of 1 kips per ft (0.083 k/in) along all spans
+    _three_span_beam = three_span_beam
+    _three_span_beam.AddMemberDistLoad("M1", "Fy", 1 / 12, 1 / 12, 0, length)
+    _three_span_beam.AddMemberDistLoad("M2", "Fy", 1 / 12, 1 / 12, 0, length)
+    _three_span_beam.AddMemberDistLoad("M3", "Fy", 1 / 12, 1 / 12, 0, length)
+    # Analyze the beam
+    _three_span_beam.Analyze()
+
+    return _three_span_beam
+
+
+@pytest.fixture
+def three_span_beam_dist_load_2(three_span_beam, length):
+    # Add a distributed load of 1 kips per ft (0.083 k/in) along spans M1 and M2 only
+    _three_span_beam = three_span_beam
+    _three_span_beam.AddMemberDistLoad("M1", "Fy", 1 / 12, 1 / 12, 0, length)
+    _three_span_beam.AddMemberDistLoad("M2", "Fy", 1 / 12, 1 / 12, 0, length)
+
+    # Analyze the beam
+    _three_span_beam.Analyze()
+
+    return _three_span_beam
+
+
+@pytest.fixture
+def three_span_beam_dist_load_3(three_span_beam, length):
+    # Add a distributed load of 1 kips per ft (0.083 k/in) along spans M1 and M3 only
+    _three_span_beam = three_span_beam
+    _three_span_beam.AddMemberDistLoad("M1", "Fy", 1 / 12, 1 / 12, 0, length)
+    _three_span_beam.AddMemberDistLoad("M3", "Fy", 1 / 12, 1 / 12, 0, length)
+
+    # Analyze the beam
+    _three_span_beam.Analyze()
+
+    return _three_span_beam
