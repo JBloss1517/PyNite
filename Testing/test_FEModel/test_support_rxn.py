@@ -1,5 +1,5 @@
 import pytest
-
+from PyNite import FEModel3D
 
 ## Expected Results are derived from ASCE STEEL CONSTRUCTION MANUAL 14TH ED.
 @pytest.mark.parametrize("test_beam, expected", [
@@ -158,3 +158,87 @@ def test_3_span_beam_supports(test_beam, expected):
     rxn_4_MZ = round(test_beam.GetNode("N4").RxnMZ, 1)
     rxn_4 = (rxn_4_X, rxn_4_Y, rxn_4_Z, rxn_4_MX, rxn_4_MY, rxn_4_MZ)
     assert [rxn_1, rxn_2, rxn_3, rxn_4] == expected
+
+
+## Expected Results are derived from example 16.1 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
+def test_two_member_frame_1_lat_load(two_member_frame_1_lat_load):
+    Frame = two_member_frame_1_lat_load
+
+    expected_rxn_1_X = 0.0
+    expected_rxn_1_Y = - 1.87
+    expected_rxn_1_Z = 0.0
+    expected_rxn_1_MX = 0.0
+    expected_rxn_1_MY = 0.0
+    expected_rxn_1_MZ = 0.0
+    expected_rxn_1 = (
+        expected_rxn_1_X, expected_rxn_1_Y, expected_rxn_1_Z, expected_rxn_1_MX, expected_rxn_1_MY, expected_rxn_1_MZ)
+
+    expected_rxn_3_X = -5.0
+    expected_rxn_3_Y = 1.87
+    expected_rxn_3_Z = 0.0
+    expected_rxn_3_MX = 0.0
+    expected_rxn_3_MY = 0.0
+    expected_rxn_3_MZ = 750
+    expected_rxn_3 = (
+        expected_rxn_3_X, expected_rxn_3_Y, expected_rxn_3_Z, expected_rxn_3_MX, expected_rxn_3_MY, expected_rxn_3_MZ)
+
+    # reactions at each end of the beam
+    rxn_1_X = round(Frame.GetNode("N1").RxnFX, 2)
+    rxn_1_Y = round(Frame.GetNode("N1").RxnFY, 2)
+    rxn_1_Z = round(Frame.GetNode("N1").RxnFZ, 2)
+    rxn_1_MX = round(Frame.GetNode("N1").RxnMX, 2)
+    rxn_1_MY = round(Frame.GetNode("N1").RxnMY, 2)
+    rxn_1_MZ = round(Frame.GetNode("N1").RxnMZ, 0)
+    rxn_1 = (rxn_1_X, rxn_1_Y, rxn_1_Z, rxn_1_MX, rxn_1_MY, rxn_1_MZ)
+
+    rxn_3_X = round(Frame.GetNode("N3").RxnFX, 2)
+    rxn_3_Y = round(Frame.GetNode("N3").RxnFY, 2)
+    rxn_3_Z = round(Frame.GetNode("N3").RxnFZ, 2)
+    rxn_3_MX = round(Frame.GetNode("N3").RxnMX, 2)
+    rxn_3_MY = round(Frame.GetNode("N3").RxnMY, 2)
+    rxn_3_MZ = round(Frame.GetNode("N3").RxnMZ, 0)
+    rxn_3 = (rxn_3_X, rxn_3_Y, rxn_3_Z, rxn_3_MX, rxn_3_MY, rxn_3_MZ)
+
+    assert [rxn_1, rxn_3] == [expected_rxn_1, expected_rxn_3]
+
+
+## Expected Results are derived from example 16.2 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
+def test_two_member_frame_2_dist_load(two_member_frame_2_dist_load):
+    Frame = two_member_frame_2_dist_load
+
+    expected_rxn_1_X = round(35.85, 0)
+    expected_rxn_1_Y = round(24.63, 0)
+    expected_rxn_1_Z = round(0.0, 0)
+    expected_rxn_1_MX = round(0.0, 0)
+    expected_rxn_1_MY = round(0.0, 0)
+    expected_rxn_1_MZ = round(-146, 0)
+    expected_rxn_1 = (
+        expected_rxn_1_X, expected_rxn_1_Y, expected_rxn_1_Z, expected_rxn_1_MX, expected_rxn_1_MY, expected_rxn_1_MZ)
+
+    expected_rxn_3_X = round(-35.85, 0)
+    expected_rxn_3_Y = round(35.4, 0)
+    expected_rxn_3_Z = round(0.0, 0)
+    expected_rxn_3_MX = round(0.0, 0)
+    expected_rxn_3_MY = round(0.0, 0)
+    expected_rxn_3_MZ = round(-1688, 0)
+    expected_rxn_3 = (
+        expected_rxn_3_X, expected_rxn_3_Y, expected_rxn_3_Z, expected_rxn_3_MX, expected_rxn_3_MY, expected_rxn_3_MZ)
+
+    # reactions at each end of the beam
+    rxn_1_X = round(Frame.GetNode("N1").RxnFX, 0)
+    rxn_1_Y = round(Frame.GetNode("N1").RxnFY, 0)
+    rxn_1_Z = round(Frame.GetNode("N1").RxnFZ, 0)
+    rxn_1_MX = round(Frame.GetNode("N1").RxnMX, 0)
+    rxn_1_MY = round(Frame.GetNode("N1").RxnMY, 0)
+    rxn_1_MZ = round(Frame.GetNode("N1").RxnMZ, 0)
+    rxn_1 = (rxn_1_X, rxn_1_Y, rxn_1_Z, rxn_1_MX, rxn_1_MY, rxn_1_MZ)
+
+    rxn_3_X = round(Frame.GetNode("N3").RxnFX, 0)
+    rxn_3_Y = round(Frame.GetNode("N3").RxnFY, 0)
+    rxn_3_Z = round(Frame.GetNode("N3").RxnFZ, 0)
+    rxn_3_MX = round(Frame.GetNode("N3").RxnMX, 0)
+    rxn_3_MY = round(Frame.GetNode("N3").RxnMY, 0)
+    rxn_3_MZ = round(Frame.GetNode("N3").RxnMZ, 0)
+    rxn_3 = (rxn_3_X, rxn_3_Y, rxn_3_Z, rxn_3_MX, rxn_3_MY, rxn_3_MZ)
+
+    assert [rxn_1, rxn_3] == [expected_rxn_1, expected_rxn_3]

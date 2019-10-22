@@ -6,14 +6,16 @@
 import pytest
 from PyNite import FEModel3D
 
+
 @pytest.fixture
 def length():
     # 14ft = 168in
     return 14 * 12
 
 
-## Fixtures of different configuration
+### Fixtures of different configuration
 
+## 2D Beams Configuration
 @pytest.fixture
 def simple_beam(length):
     SimpleBeam = FEModel3D()
@@ -99,7 +101,49 @@ def three_span_beam(length):
     return ThreeSpanBeam
 
 
-## Beam fixtures with different load configurations
+## 2D Frames Configuration
+
+@pytest.fixture
+def two_member_frame_1():
+    # Two member frame with one beam and one column. Column is on right.
+    # Frame is taken from Example 16.1 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
+    Frame = FEModel3D()
+
+    Frame.AddNode("N1", X=0, Y=20 * 12, Z=0)
+    Frame.AddNode("N2", X=20 * 12, Y=20 * 12, Z=0)
+    Frame.AddNode("N3", X=20 * 12, Y=0, Z=0)
+
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=500, Iz=150, J=2, A=10)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=500, Iz=150, J=2, A=10)
+
+    # N1: Roller, N3: Fixed
+    Frame.DefineSupport("N1", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+    Frame.DefineSupport("N3", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
+
+    return Frame
+
+
+@pytest.fixture
+def two_member_frame_2():
+    # Two member frame with sloping beam up to flat beam. Flat beam is on right.
+    # Frame is taken from Example 16.2 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
+    Frame = FEModel3D()
+
+    Frame.AddNode("N1", X=0, Y=0, Z=0)
+    Frame.AddNode("N2", X=20 * 12, Y=15 * 12, Z=0)
+    Frame.AddNode("N3", X=20 * 12 + 20 * 12, Y=15 * 12, Z=0)
+
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=600, Iz=150, J=2, A=12)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=600, Iz=150, J=2, A=12)
+
+    # N1: Fixed, N3: Fixed
+    Frame.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
+    Frame.DefineSupport("N3", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
+
+    return Frame
+
+
+### 2D Beam fixtures with different load configurations
 
 @pytest.fixture
 def simple_beam_pt_load_1(simple_beam, length):
@@ -279,3 +323,29 @@ def three_span_beam_dist_load_3(three_span_beam, length):
     _three_span_beam.Analyze()
 
     return _three_span_beam
+
+
+## 2D frame fixtures with different load configurations
+
+@pytest.fixture
+def two_member_frame_1_lat_load(two_member_frame_1):
+    # Add a 5 kip point load at top of column
+    _two_member_frame = two_member_frame_1
+    _two_member_frame.AddNodeLoad("N2", "FX", 5.0)
+
+    # Analyze the frame
+    _two_member_frame.Analyze()
+
+    return _two_member_frame
+
+
+@pytest.fixture
+def two_member_frame_2_dist_load(two_member_frame_2):
+    # Add a distributed load of 3 kips per ft (0.25 k/in) along horizontal beam only
+    _two_member_frame = two_member_frame_2
+    _two_member_frame.AddMemberDistLoad("M2", "Fy", 3 / 12, 3 / 12, 0, 20 * 12)
+
+    # Analyze the frame
+    _two_member_frame.Analyze()
+
+    return _two_member_frame
