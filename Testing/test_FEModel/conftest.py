@@ -113,8 +113,8 @@ def two_member_frame_1():
     Frame.AddNode("N2", X=20 * 12, Y=20 * 12, Z=0)
     Frame.AddNode("N3", X=20 * 12, Y=0, Z=0)
 
-    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=500, Iz=150, J=2, A=10)
-    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=500, Iz=150, J=2, A=10)
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=150, Iz=500, J=2, A=10)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=150, Iz=500, J=2, A=10)
 
     # N1: Roller, N3: Fixed
     Frame.DefineSupport("N1", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -133,14 +133,38 @@ def two_member_frame_2():
     Frame.AddNode("N2", X=20 * 12, Y=15 * 12, Z=0)
     Frame.AddNode("N3", X=20 * 12 + 20 * 12, Y=15 * 12, Z=0)
 
-    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=600, Iz=150, J=2, A=12)
-    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=600, Iz=150, J=2, A=12)
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=150, Iz=600, J=2, A=12)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=150, Iz=600, J=2, A=12)
 
     # N1: Fixed, N3: Fixed
     Frame.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
     Frame.DefineSupport("N3", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
 
     return Frame
+
+
+@pytest.fixture
+def three_member_frame_1():
+    MomentFrame = FEModel3D()
+
+    # Add nodes (frame is 15 ft wide x 12 ft tall)
+    MomentFrame.AddNode("N1", 0, 0, 0)
+    MomentFrame.AddNode("N2", 0, 12 * 12, 0)
+    MomentFrame.AddNode("N3", 15 * 12, 12 * 12, 0)
+    MomentFrame.AddNode("N4", 15 * 12, 0 * 12, 0)
+
+    # Add columns with the following properties:
+    # AISC W8x31
+    # E = 29000 ksi, G = 11154 ksi, Iy = 37.1 in^4, Iz = 110 in^4, J = 0.536 in^4, A = 9.13 in^2
+    MomentFrame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
+    MomentFrame.AddMember("M2", "N4", "N3", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
+    MomentFrame.AddMember("M3", "N2", "N3", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
+
+    # Provide fixed supports at the bases of the columns
+    MomentFrame.DefineSupport("N1", True, True, True, True, True, True)
+    MomentFrame.DefineSupport("N4", True, True, True, True, True, True)
+
+    return MomentFrame
 
 
 ### 2D Beam fixtures with different load configurations
@@ -349,3 +373,42 @@ def two_member_frame_2_dist_load(two_member_frame_2):
     _two_member_frame.Analyze()
 
     return _two_member_frame
+
+
+@pytest.fixture
+def three_member_frame_1_joint_load_1(three_member_frame_1):
+    # Add a nodal lateral load of 50 kips at the left side of the frame
+    _three_member_frame_1 = three_member_frame_1
+    _three_member_frame_1.AddNodeLoad("N2", "FX", 50)
+
+    # Analyze the frame
+    _three_member_frame_1.Analyze()
+
+    return _three_member_frame_1
+
+
+@pytest.fixture
+def three_member_frame_1_joint_load_2(three_member_frame_1):
+    # Add a nodal lateral load of 50 kips at the left side of the frame
+    # Adds axial load of 25 kips at top of each column
+    _three_member_frame_1 = three_member_frame_1
+    _three_member_frame_1.AddNodeLoad("N2", "FX", 50)
+    _three_member_frame_1.AddNodeLoad("N2", "FY", -25)
+    _three_member_frame_1.AddNodeLoad("N3", "FY", -25)
+
+    # Analyze the frame
+    _three_member_frame_1.Analyze()
+
+    return _three_member_frame_1
+
+
+@pytest.fixture
+def three_member_frame_1_joint_load_3(three_member_frame_1):
+    # Add a nodal moment of -1250 kip-in at the top left side of the frame
+    _three_member_frame_1 = three_member_frame_1
+    _three_member_frame_1.AddNodeLoad("N2", "MZ", -1250)
+
+    # Analyze the frame
+    _three_member_frame_1.Analyze()
+
+    return _three_member_frame_1
