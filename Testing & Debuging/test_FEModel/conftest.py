@@ -96,7 +96,7 @@ def three_span_beam(length):
     ThreeSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
     ThreeSpanBeam.DefineSupport("N2", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
     ThreeSpanBeam.DefineSupport("N3", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
-    ThreeSpanBeam.DefineSupport("N3", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
+    ThreeSpanBeam.DefineSupport("N4", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
 
     return ThreeSpanBeam
 

@@ -110,10 +110,10 @@ def test_2_span_beam_supports(test_beam, expected):
 # Testing to only 1 decimal
 @pytest.mark.parametrize("test_beam, expected", [
     (pytest.lazy_fixture("three_span_beam_dist_load_1"),
-     [(0.0, round(0.40 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0),
-      (0.0, round(1.10 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0),
-      (0.0, round(1.10 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0),
-      (0.0, round(0.40 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0)]),
+     [(0.0, round(0.40 * 1 / 12 * 14 * 12, ), 0.0, 0.0, 0.0, 0.0),
+      (0.0, round(1.10 * 1 / 12 * 14 * 12, ), 0.0, 0.0, 0.0, 0.0),
+      (0.0, round(1.10 * 1 / 12 * 14 * 12, ), 0.0, 0.0, 0.0, 0.0),
+      (0.0, round(0.40 * 1 / 12 * 14 * 12, ), 0.0, 0.0, 0.0, 0.0)]),
     (pytest.lazy_fixture("three_span_beam_dist_load_2"),
      [(0.0, round(0.383 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0),
       (0.0, round(1.20 * 1 / 12 * 14 * 12, 1), 0.0, 0.0, 0.0, 0.0),
