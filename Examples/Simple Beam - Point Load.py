@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Sep 16 14:43:31 2018
-
-@author: craig
-"""
 # Example of a simply supported beam with a point load.
 # Units used in this example are inches, and kips
 
@@ -32,9 +26,9 @@ SimpleBeam.AddMemberPtLoad("M1", "Fy", 5, 7 * 12)
 SimpleBeam.Analyze()
 
 # Print the shear, moment, and deflection diagrams
-# SimpleBeam.GetMember("M1").PlotShear("Fy")
-# SimpleBeam.GetMember("M1").PlotMoment("Mz")
-# SimpleBeam.GetMember("M1").PlotDeflection("dy")
+SimpleBeam.GetMember("M1").PlotShear("Fy")
+SimpleBeam.GetMember("M1").PlotMoment("Mz")
+SimpleBeam.GetMember("M1").PlotDeflection("dy")
 
 # Print reactions at each end of the beam
 print("Left Support Reaction: {Rxn:.2f} kip".format(Rxn = SimpleBeam.GetNode("N1").RxnFY))

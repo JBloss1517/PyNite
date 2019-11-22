@@ -6,7 +6,7 @@ Created on Thu Nov  9 21:11:20 2017
 """
 # %%
 from numpy import zeros, delete, insert, matmul, subtract
-from numpy.linalg import inv
+from numpy.linalg import inv, matrix_rank
 from PyNite.Node3D import Node3D
 from PyNite.Member3D import Member3D
 
@@ -209,7 +209,7 @@ class FEModel3D():
         """
         
         # Add the node load to the model
-        self.GetNode(Node).NodeLoads.append([Direction, P])
+        self.GetNode(Node).NodeLoads.append((Direction, P))
 
 #%%      
     def AddMemberPtLoad(self, Member, Direction, P, x):
@@ -236,7 +236,7 @@ class FEModel3D():
         self.GetMember(Member).PtLoads.append((Direction, P, x))
 
 #%%
-    def AddMemberDistLoad(self, Member, Direction, w1, w2, x1, x2):
+    def AddMemberDistLoad(self, Member, Direction, w1, w2, x1=None, x2=None):
         """
         Adds a member distributed load to the model.
         
@@ -253,13 +253,27 @@ class FEModel3D():
         w2 : number
             The ending value (magnitude) of the load.
         x1 : number
-            The load's start location along the member's local x-axis.
+            The load's start location along the member's local x-axis. If this argument
+            is not specified, the start of the member will be used.
         x2 : number
-            The load's end location along the member's local x-axis.
+            The load's end location along the member's local x-axis. If this argument
+            is not specified, the end of the member will be used.
         """
         
+        # Determine if a starting and ending points for the load have been specified.
+        # If not, use the member start and end as defaults
+        if x1 == None:
+            start = 0
+        else:
+            start = x1
+        
+        if x2 == None:
+            end = self.GetMember(Member).L
+        else:
+            end = x2
+
         # Add the distributed load to the member
-        self.GetMember(Member).DistLoads.append((Direction, w1, w2, x1, x2))
+        self.GetMember(Member).DistLoads.append((Direction, w1, w2, start, end))
 
 #%%
     def GetNode(self, Name):
@@ -323,7 +337,7 @@ class FEModel3D():
             i += 1
             
 #%%    
-    def K(self, Renumber = True):
+    def K(self, Renumber=False):
         """
         Assembles and returns the global stiffness matrix.
         
@@ -376,7 +390,7 @@ class FEModel3D():
         return K
     
 #%%    
-    def FER(self, Renumber = True):
+    def FER(self, Renumber=False):
         """
         Assembles and returns the global fixed end reaction vector.
         
@@ -414,13 +428,13 @@ class FEModel3D():
                     m = member.jNode.ID * 6 + (a - 6)
                 
                 # Now that 'm' is known, place the term in the global fixed end reaction vector
-                FER.itemset((m, 0), FER[m, 0] + member.fer()[a, 0])
+                FER.itemset((m, 0), FER[m, 0] + member.FER()[a, 0])
         
         # Return the global fixed end reaction vector
         return FER
     
 #%%
-    def P(self, Renumber = True):
+    def P(self, Renumber=False):
         """
         Assembles and returns the global nodal force vector.
         
@@ -439,7 +453,7 @@ class FEModel3D():
             self.__Renumber()
             
         # Initialize a zero vector to hold all the terms
-        P = zeros((len(self.Nodes) * 6, 1))
+        Pvector = zeros((len(self.Nodes)*6, 1))
         
         # Add terms for each node in the model
         for node in self.Nodes:
@@ -451,20 +465,20 @@ class FEModel3D():
             for load in node.NodeLoads:
                 
                 if load[0] == 'FX':
-                    P.itemset((ID * 6 + 0, 0), P[ID * 6 + 0, 0] + load[1])
+                    Pvector.itemset((ID*6 + 0, 0), Pvector[ID*6 + 0, 0] + load[1])
                 elif load[0] == 'FY':
-                    P.itemset((ID * 6 + 1, 0), P[ID * 6 + 1, 0] + load[1])
+                    Pvector.itemset((ID*6 + 1, 0), Pvector[ID*6 + 1, 0] + load[1])
                 elif load[0] == 'FZ':
-                    P.itemset((ID * 6 + 2, 0), P[ID * 6 + 2, 0] + load[1])
+                    Pvector.itemset((ID*6 + 2, 0), Pvector[ID*6 + 2, 0] + load[1])
                 elif load[0] == 'MX':
-                    P.itemset((ID * 6 + 3, 0), P[ID * 6 + 3, 0] + load[1])
+                    Pvector.itemset((ID*6 + 3, 0), Pvector[ID*6 + 3, 0] + load[1])
                 elif load[0] == 'MY':
-                    P.itemset((ID * 6 + 4, 0), P[ID * 6 + 4, 0] + load[1])
+                    Pvector.itemset((ID*6 + 4, 0), Pvector[ID*6 + 4, 0] + load[1])
                 elif load[0] == 'MZ':
-                    P.itemset((ID * 6 + 5, 0), P[ID * 6 + 5, 0] + load[1])
+                    Pvector.itemset((ID*6 + 5, 0), Pvector[ID*6 + 5, 0] + load[1])
         
         # Return the global nodal force vector
-        return P
+        return Pvector
     
 #%%
     def D(self):
@@ -476,7 +490,7 @@ class FEModel3D():
         return self.__D
         
 #%%  
-    def Analyze(self):
+    def Analyze(self, check_statics=True):
         """
         Analyzes the model.
         """
@@ -533,8 +547,14 @@ class FEModel3D():
                 FER = delete(FER, node.ID * 6 + 0, axis = 0)
                 P = delete(P, node.ID * 6 + 0, axis = 0)
                         
-        # Calculate the global displacement vector
-        self.__D = matmul(inv(K), subtract(P, FER))
+        # Determine if 'K' is singular
+        if matrix_rank(K) < min(K.shape):
+            # Return out of the method if 'K' is singular and provide an error message
+            print('The stiffness matrix is singular, which implies rigid body motion. The structure is unstable. Aborting analysis.')
+            return
+        else:
+            # Calculate the global displacement vector
+            self.__D = matmul(inv(K), subtract(P, FER))
         
         # Save the displacements as a local variable for easier reference below
         D = self.__D
@@ -608,3 +628,78 @@ class FEModel3D():
         # Segment all members in the model to make member results available
         for member in self.Members:
             member.SegmentMember()
+        
+        # Check statics if requested
+        if check_statics == True:
+            self.__CheckStatics()
+
+#%%
+    def __CheckStatics(self):
+
+        # Initialize force summations to zero
+        SumFX = 0
+        SumFY = 0
+        SumFZ = 0
+        SumMX = 0
+        SumMY = 0
+        SumMZ = 0
+        SumRFX = 0
+        SumRFY = 0
+        SumRFZ = 0
+        SumRMX = 0
+        SumRMY = 0
+        SumRMZ = 0
+
+        # Get the global force vector and the global fixed end reaction vector
+        P = self.P(False)
+        FER = self.FER()
+
+        # Step through each node and sum its forces
+        for node in self.Nodes:
+
+            # Get the node's coordinates
+            X = node.X
+            Y = node.Y
+            Z = node.Z
+
+            # Get the nodal forces
+            FX = P[node.ID*6+0][0] - FER[node.ID*6+0][0]
+            FY = P[node.ID*6+1][0] - FER[node.ID*6+1][0]
+            FZ = P[node.ID*6+2][0] - FER[node.ID*6+2][0]
+            MX = P[node.ID*6+3][0] - FER[node.ID*6+3][0]
+            MY = P[node.ID*6+4][0] - FER[node.ID*6+4][0]
+            MZ = P[node.ID*6+5][0] - FER[node.ID*6+5][0]
+
+            # Get the nodal reactions
+            RFX = node.RxnFX
+            RFY = node.RxnFY
+            RFZ = node.RxnFZ
+            RMX = node.RxnMX
+            RMY = node.RxnMY
+            RMZ = node.RxnMZ
+
+            # Sum the global forces
+            SumFX += FX
+            SumFY += FY
+            SumFZ += FZ
+            SumMX += MX - FY*Z + FZ*Y
+            SumMY += MY + FX*Z - FZ*X
+            SumMZ += MZ - FX*Y + FY*X
+
+            # Sum the global reactions
+            SumRFX += RFX
+            SumRFY += RFY
+            SumRFZ += RFZ
+            SumRMX += RMX - RFY*Z + RFZ*Y
+            SumRMY += RMY + RFX*Z - RFZ*X
+            SumRMZ += RMZ - RFX*Y + RFY*X   
+        
+        # Print the load summation
+        print('**Applied Loads**')
+        print('Sum Forces X: ', SumFX, ', Sum Forces Y: ', SumFY, ', Sum Forces Z: ', SumFZ)
+        print('Sum Moments MX: ', SumMX, ', Sum Moments MY: ', SumMY, ', Sum Moments MZ: ', SumMZ)
+        print('**Reactions**')
+        print('Sum Forces X: ', SumRFX, ', Sum Forces Y: ', SumRFY, ', Sum Forces Z: ', SumRFZ)
+        print('Sum Moments MX: ', SumRMX, ', Sum Moments MY: ', SumRMY, ', Sum Moments MZ: ', SumRMZ)
+
+        return SumFX, SumFY, SumFZ, SumMX, SumMY, SumMZ

@@ -5,8 +5,9 @@ Created on Thu Nov  2 18:04:56 2017
 @author: D. Craig Brinck, SE
 """
 # %%
-from numpy import zeros, matrix, transpose, add, subtract, matmul, insert
+from numpy import zeros, matrix, transpose, add, subtract, matmul, insert, cross, divide
 from numpy.linalg import inv
+from math import isclose
 from PyNite.BeamSegment import BeamSegment
 import PyNite.FixedEndReactions
 
@@ -36,13 +37,17 @@ class Member3D():
         self.Iz = Iz    # The z-axis moment of inertia
         self.J = J  # The polar moment of inertia or torsional constant
         self.A = A  # The cross-sectional area
-        self.L = ((jNode.X-iNode.X)**2+(jNode.Y-iNode.Y)**2+(jNode.Z-iNode.Z)**2)**0.5  # Length of the element
         self.PtLoads = []   # A list of point loads & moments applied to the element (Direction, P, x) or (Direction, M, x)
         self.DistLoads = [] # A list of linear distributed loads applied to the element (Direction, w1, w2, x1, x2)
         self.SegmentsZ = [] # A list of mathematically continuous beam segments for z-bending
         self.SegmentsY = [] # A list of mathematically continuous beam segments for y-bending
-        self.FER = zeros((12,1)) # The fixed end reaction vector
         self.Releases = [False, False, False, False, False, False, False, False, False, False, False, False]
+
+#%%
+    def L(self):
+        iNode = self.iNode
+        jNode = self.jNode
+        return ((jNode.X-iNode.X)**2+(jNode.Y-iNode.Y)**2+(jNode.Z-iNode.Z)**2)**0.5
 
 #%%
     def k(self):
@@ -84,7 +89,7 @@ class Member3D():
         Iz = self.Iz
         J = self.J
         A = self.A
-        L = self.L
+        L = self.L()
         
         # Create the uncondensed local stiffness matrix
         k = matrix([[A*E/L, 0, 0 , 0, 0, 0, -A*E/L, 0, 0, 0, 0, 0],
@@ -100,7 +105,7 @@ class Member3D():
                     [0, 0, -6*E*Iy/L**2, 0, 2*E*Iy/L, 0, 0, 0, 6*E*Iy/L**2, 0, 4*E*Iy/L, 0],
                     [0, 6*E*Iz/L**2, 0, 0, 0, 2*E*Iz/L, 0, -6*E*Iz/L**2, 0, 0, 0, 4*E*Iz/L]])
         
-        # Count the number of released degrees of freedom
+        # Count the number of released degrees of freedom in the member
         NumReleases = 0
         for DOF in self.Releases:
             if DOF == True:
@@ -205,21 +210,21 @@ class Member3D():
         # Sum the fixed end reactions for the point loads & moments
         for ptLoad in self.PtLoads:
             if ptLoad[0] == "Fx":
-                fer = add(fer, PyNite.FixedEndReactions.FER_AxialPtLoad(ptLoad[1], ptLoad[2], self.L))
+                fer = add(fer, PyNite.FixedEndReactions.FER_AxialPtLoad(ptLoad[1], ptLoad[2], self.L()))
             elif ptLoad[0] == "Fy":
-                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L, "Fy"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L(), "Fy"))
             elif ptLoad[0] == "Fz":
-                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L, "Fz"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L(), "Fz"))
             elif ptLoad[0] == "Mx":
                 fer = fer
             elif ptLoad[0] == "My":
-                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L, "My"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L(), "My"))
             elif ptLoad[0] == "Mz":     
-                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L, "Mz"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L(), "Mz"))
                 
         # Sum the fixed end reactions for the distributed loads
         for distLoad in self.DistLoads:
-            fer = add(fer, PyNite.FixedEndReactions.FER_LinLoad(distLoad[1], distLoad[2], distLoad[3], distLoad[4], self.L, distLoad[0]))        
+            fer = add(fer, PyNite.FixedEndReactions.FER_LinLoad(distLoad[1], distLoad[2], distLoad[3], distLoad[4], self.L(), distLoad[0]))        
  
         # Count the number of released degrees of freedom
         NumReleases = 0
@@ -244,7 +249,7 @@ class Member3D():
                 fer1.itemset((m1, 0), fer.item(m, 0))
                 m1 += 1
             
-            elif self.Releases == True:
+            elif self.Releases[m] == True:
                 
                 fer2.itemset((m2, 0), fer.item(m, 0))
                 m2 += 1
@@ -265,21 +270,22 @@ class Member3D():
         # Sum the fixed end reactions for the point loads & moments
         for ptLoad in self.PtLoads:
             if ptLoad[0] == "Fx":
-                fer = add(fer, PyNite.FixedEndReactions.FER_AxialPtLoad(ptLoad[1], ptLoad[2], self.L))
+                fer = add(fer, PyNite.FixedEndReactions.FER_AxialPtLoad(ptLoad[1], ptLoad[2], self.L()))
             elif ptLoad[0] == "Fy":
-                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L, "Fy"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L(), "Fy"))
             elif ptLoad[0] == "Fz":
-                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L, "Fz"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_PtLoad(ptLoad[1], ptLoad[2], self.L(), "Fz"))
+            # Torsional loads are not yet supported by PyNite
             elif ptLoad[0] == "Mx":
                 fer = fer
             elif ptLoad[0] == "My":
-                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L, "My"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L(), "My"))
             elif ptLoad[0] == "Mz":     
-                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L, "Mz"))
+                fer = add(fer, PyNite.FixedEndReactions.FER_Moment(ptLoad[1], ptLoad[2], self.L(), "Mz"))
                 
         # Sum the fixed end reactions for the distributed loads
         for distLoad in self.DistLoads:
-            fer = add(fer, PyNite.FixedEndReactions.FER_LinLoad(distLoad[1], distLoad[2], distLoad[3], distLoad[4], self.L, distLoad[0]))
+            fer = add(fer, PyNite.FixedEndReactions.FER_LinLoad(distLoad[1], distLoad[2], distLoad[3], distLoad[4], self.L(), distLoad[0]))
         
         # Return the fixed end reaction vector, uncondensed
         return fer
@@ -312,26 +318,86 @@ class Member3D():
         y2 = self.jNode.Y
         z1 = self.iNode.Z
         z2 = self.jNode.Z
-        L = self.L
+        L = self.L()
         
-        # Calculate direction cosines for the transformation matrix
-        l = (x2-x1)/L
-        m = (y2-y1)/L
-        n = (z2-z1)/L
-        D = (l**2+m**2)**0.5
-        
-        if l == 0 and m == 0 and n > 0:
-            dirCos = matrix([[0, 0, 1],
-                             [0, 1, 0],
-                             [-1, 0, 0]])
-        elif l == 0 and m == 0 and n < 0:
-            dirCos = matrix([[0, 0, -1],
-                             [0, 1, 0],
-                             [1, 0, 0]])
+        # The following commented code is no longer used to formulate the transformation matrix.
+        # It was found to be incorrect, even though it follows 'A First Course in the Finite Element Method, 4th Ed.'.
+        # It's being kept for reference for now. The 'z' direction cosines in it are not a unit vector.
+        # It also keeps the local y-axis perpendicular to the global Z-axis, which isn't very intuitive
+        # for the user. It can lead to unexpected member local axis 'flipping'. A better formulation has
+        # been implemented below.
+
+        # # Calculate direction cosines for the transformation matrix
+        # if isclose(x2-x1, 0.0) and isclose(y2-y1, 0.0) and (z2-z1 > 0.0):
+        #     dirCos = matrix([[0, 0, 1],
+        #                      [0, 1, 0],
+        #                      [-1, 0, 0]])
+        # elif isclose(x2-x1, 0.0) and isclose(y2-y1, 0.0) and (z2-z1 < 0.0):
+        #     dirCos = matrix([[0, 0, -1],
+        #                      [0, 1, 0],
+        #                      [1, 0, 0]])
+        # else:
+        #     l = (x2-x1)/L
+        #     m = (y2-y1)/L
+        #     n = (z2-z1)/L
+        #     D = (l**2+m**2)**0.5
+        #     dirCos = matrix([[l, m, n],
+        #                      [-m/D, l/D, 0],
+        #                      [-l*n/D, -m*n/D, D]])
+
+        # Calculate the direction cosines for the local x-axis
+        x = [(x2-x1)/L, (y2-y1)/L, (z2-z1)/L]
+
+        # Calculate the remaining direction cosines. The local z-axis will be kept parallel to the global XZ plane in all cases
+        # Vertical members
+        if isclose(x1, x2) and isclose(z1, z2):
+
+            # For vertical members, keep the local y-axis in the XY plane to make 2D problems easier to solve in the XY plane
+            if y2 > y1:
+                y = [-1, 0, 0]
+                z = [0, 0, 1]
+            else:
+                y = [1, 0, 0]
+                z = [0, 0, 1]
+
+        # Horizontal members
+        elif isclose(y1, y2):
+            
+            # Find a vector in the direction of the local z-axis by taking the cross-product
+            # of the local x-axis and the local y-axis. This vector will be perpendicular to
+            # both the local x-axis and the local y-axis.
+            y = [0, 1, 0]
+            z = cross(x, y)
+
+            # Divide the z-vector by its magnitude to produce a unit vector of direction cosines
+            z = divide(z, (z[0]**2 + z[1]**2 + z[2]**2)**0.5)
+
+        # Members neither vertical or horizontal
         else:
-            dirCos = matrix([[l, m, n],
-                             [-m/D, l/D, 0],
-                             [-l*n/D, -m*n/D, D]])
+
+            # Find the projection of x on the global XZ plane
+            proj = [x2-x1, 0, z2-z1]
+
+            # Find a vector in the direction of the local z-axis by taking the cross-product
+            # of the local x-axis and its projection on a plane parallel to the XZ plane. This
+            # produces a vector perpendicular to both the local x-axis and its projection. This
+            # vector will always be horizontal since it's parallel to the XZ plane. The order
+            # in which the vectors are 'crossed' has been selected to ensure the y-axis always
+            # has an upward component (i.e. the top of the beam is always on top).
+            if y2 > y1:
+                z = cross(proj, x)
+            else:
+                z = cross(x, proj)
+
+            # Divide the z-vector by its magnitude to produce a unit vector of direction cosines
+            z = divide(z, (z[0]**2 + z[1]**2 + z[2]**2)**0.5)
+
+            # Find the direction cosines for the local y-axis
+            y = cross(z, x)
+            y = divide(y, (y[0]**2 + y[1]**2 + y[2]**2)**0.5)
+
+        # Create the direction cosines matrix
+        dirCos = matrix([x, y, z])
         
         # Build the transformation matrix
         transMatrix = zeros((12, 12))
@@ -417,7 +483,7 @@ class Member3D():
                 if round(x, 10) >= round(segment.x1, 10) and round(x, 10) < round(segment.x2, 10):
                     return segment.Shear(x - segment.x1)
                 
-            if round(x, 10) == round(self.L, 10):  
+            if isclose(x, self.L()):  
                 lastIndex = len(self.SegmentsZ) - 1
                 return self.SegmentsZ[lastIndex].Shear(x - self.SegmentsZ[lastIndex].x1)
                 
@@ -429,7 +495,7 @@ class Member3D():
                     
                     return segment.Shear(x - segment.x1)
                 
-            if round(x,10) == round(self.L,10):
+            if isclose(x, self.L()):
                 
                 lastIndex = len(self.SegmentsY) - 1
                 return self.SegmentsY[lastIndex].Shear(x - self.SegmentsY[lastIndex].x1)
@@ -447,10 +513,10 @@ class Member3D():
                 "Fz" = Shear acting on the local z-axis
         """        
         
-        Vmax = 0
-        
         if Direction == "Fy":
             
+            Vmax = self.SegmentsZ[0].Shear(0)
+
             for segment in self.SegmentsZ:
                 
                 if segment.MaxShear() > Vmax:
@@ -459,6 +525,8 @@ class Member3D():
                     
         if Direction == "Fz":
             
+            Vmax = self.SegmentsY[0].Shear(0)
+
             for segment in self.SegmentsY:
                 
                 if segment.MaxShear() > Vmax:
@@ -480,10 +548,10 @@ class Member3D():
                 "Fz" = Shear acting on the local z-axis
         """        
         
-        Vmin = 0
-        
         if Direction == "Fy":
             
+            Vmin = self.SegmentsZ[0].Shear(0)
+
             for segment in self.SegmentsZ:
                 
                 if segment.MinShear() < Vmin:
@@ -492,6 +560,8 @@ class Member3D():
                     
         if Direction == "Fz":
             
+            Vmin = self.SegmentsY[0].Shear(0)
+
             for segment in self.SegmentsY:
                 
                 if segment.MinShear() < Vmin:
@@ -520,12 +590,13 @@ class Member3D():
         
         # Calculate the shear diagram
         for i in range(20):
-            x.append(self.L / 19 * i)
-            V.append(self.Shear(Direction, self.L / 19 * i))
+            x.append(self.L() / 19 * i)
+            V.append(self.Shear(Direction, self.L() / 19 * i))
 
         Member3D.__plt.plot(x, V)
         Member3D.__plt.ylabel('Shear')
         Member3D.__plt.xlabel('Location')
+        Member3D.__plt.title('Member ' + self.Name)
         Member3D.__plt.show()    
         
 #%%
@@ -553,7 +624,7 @@ class Member3D():
                     
                     return segment.Moment(x - segment.x1)
                 
-            if round(x,10) == round(self.L,10):
+            if isclose(x, self.L()):
                 
                 lastIndex = len(self.SegmentsY) - 1
                 return self.SegmentsY[lastIndex].Moment(x - self.SegmentsY[lastIndex].x1)
@@ -566,7 +637,7 @@ class Member3D():
                     
                     return segment.Moment(x - segment.x1)
                 
-            if round(x,10) == round(self.L,10):
+            if isclose(x, self.L()):
                 
                 lastIndex = len(self.SegmentsZ) - 1
                 return self.SegmentsZ[lastIndex].Moment(x - self.SegmentsZ[lastIndex].x1)
@@ -584,10 +655,10 @@ class Member3D():
                 "Mz" = Moment about the local z-axis
         """        
         
-        Mmax = 0
-        
         if Direction == "Mz":
             
+            Mmax = self.SegmentsZ[0].Moment(0)
+
             for segment in self.SegmentsZ:
                 
                 if segment.MaxMoment() > Mmax:
@@ -596,6 +667,8 @@ class Member3D():
                     
         if Direction == "My":
             
+            Mmax = self.SegmentsY[0].Moment(0)
+
             for segment in self.SegmentsY:
                 
                 if segment.MaxMoment() > Mmax:
@@ -603,6 +676,7 @@ class Member3D():
                     Mmax = segment.MaxMoment()
         
         return Mmax
+
 #%%
     def MinMoment(self, Direction):
         """
@@ -616,10 +690,10 @@ class Member3D():
                 "Mz" = Moment about the local z-axis
         """        
         
-        Mmin = 0
-        
         if Direction == "Mz":
             
+            Mmin = self.SegmentsZ[0].Moment(0)
+
             for segment in self.SegmentsZ:
                 
                 if segment.MinMoment() < Mmin:
@@ -628,6 +702,8 @@ class Member3D():
                     
         if Direction == "My":
             
+            Mmin = self.SegmentsY[0].Moment(0)
+
             for segment in self.SegmentsY:
                 
                 if segment.MinMoment() < Mmin:
@@ -635,6 +711,7 @@ class Member3D():
                     Mmin = segment.MinMoment()
         
         return Mmin
+
 #%%
     def PlotMoment(self, Direction):
         """
@@ -656,14 +733,95 @@ class Member3D():
         # Calculate the moment diagram
         for i in range(20):
             
-            x.append(self.L / 19 * i)
-            M.append(self.Moment(Direction, self.L / 19 * i))
+            x.append(self.L() / 19 * i)
+            M.append(self.Moment(Direction, self.L() / 19 * i))
 
         Member3D.__plt.plot(x, M)
         Member3D.__plt.ylabel('Moment')
         Member3D.__plt.xlabel('Location')
+        Member3D.__plt.title('Member ' + self.Name)
         Member3D.__plt.show()
 
+#%%
+    def Axial(self, x):
+        """
+        Returns the axial force at a point along the member's length
+        
+        Parameters
+        ----------
+        x : number
+            The location at which to find the shear
+        """
+            
+        # Check which segment "x" falls on
+        for segment in self.SegmentsZ:
+            if round(x, 10) >= round(segment.x1, 10) and round(x, 10) < round(segment.x2, 10):
+                return segment.Axial(x - segment.x1)
+                
+            if isclose(x, self.L()):  
+                lastIndex = len(self.SegmentsZ) - 1
+                return self.SegmentsZ[lastIndex].Axial(x - self.SegmentsZ[lastIndex].x1)
+#%%
+    def MaxAxial(self):
+        """
+        Returns the maximum axial force in the member
+        """        
+        
+        Pmax = self.SegmentsZ[0].Axial(0)   
+        
+        for segment in self.SegmentsZ:
+
+            if segment.MaxAxial() > Pmax:
+                    
+                Pmax = segment.MaxAxial()
+        
+        return Pmax
+    
+#%%
+    def MinAxial(self):
+        """
+        Returns the minimum axial force in the member
+        """        
+        
+        Pmin = self.SegmentsZ[0].Axial(0)
+            
+        for segment in self.SegmentsZ:
+                
+            if segment.MinAxial() < Pmin:
+                    
+                Pmin = segment.MinAxial()
+        
+        return Pmin
+    
+#%%
+    def PlotAxial(self):
+        """
+        Plots the axial force diagram for the member
+        """
+        
+        # Import 'pyplot' if not already done
+        if Member3D.__plt is None:
+            from matplotlib import pyplot as plt
+            Member3D.__plt = plt
+
+        fig, ax = Member3D.__plt.subplots()
+        ax.axhline(0, color='black', lw=1)
+        ax.grid()
+        
+        x = []
+        P = []
+        
+        # Calculate the axial force diagram
+        for i in range(20):
+            x.append(self.L() / 19 * i)
+            P.append(self.Axial(self.L() / 19 * i))
+
+        Member3D.__plt.plot(x, P)
+        Member3D.__plt.ylabel('Axial Force')
+        Member3D.__plt.xlabel('Location')
+        Member3D.__plt.title('Member ' + self.Name)
+        Member3D.__plt.show()    
+                        
 #%%
     def Deflection(self, Direction, x):
         
@@ -690,7 +848,7 @@ class Member3D():
                     
                     return segment.Deflection(x - segment.x1)
                 
-            if round(x,10) == round(self.L,10):
+            if isclose(x, self.L()):
                 
                 lastIndex = len(self.SegmentsZ) - 1
                 return self.SegmentsZ[lastIndex].Deflection(x - self.SegmentsZ[lastIndex].x1)
@@ -703,7 +861,7 @@ class Member3D():
                     
                     return segment.Deflection(x - segment.x1)
                 
-            if round(x,10) == round(self.L,10):
+            if isclose(x, self.L()):
                 
                 lastIndex = len(self.SegmentsY) - 1
                 return self.SegmentsY[lastIndex].Deflection(x - self.SegmentsY[lastIndex].x1) 
@@ -720,11 +878,11 @@ class Member3D():
         """
         
         # Initialize the maximum deflection
-        dmax = 0
+        dmax = self.Deflection(Direction, 0)
         
         # Check the deflection at 100 locations along the member and find the largest value
         for i in range(100):
-            d = self.Deflection(Direction, self.L * i / 99)
+            d = self.Deflection(Direction, self.L() * i / 99)
             if d > dmax:
                 dmax = d
         
@@ -743,11 +901,11 @@ class Member3D():
         """
         
         # Initialize the minimum deflection
-        dmin = 0
+        dmin = self.Deflection(Direction, 0)
         
         # Check the deflection at 100 locations along the member and find the smallest value
         for i in range(100):
-            d = self.Deflection(Direction, self.L * i / 99)
+            d = self.Deflection(Direction, self.L() * i / 99)
             if d < dmin:
                 dmin = d
         
@@ -758,6 +916,11 @@ class Member3D():
     def PlotDeflection(self, Direction):
         """
         Plots the deflection diagram for the member
+        
+        Parameters
+        ----------
+        Direction : {"dy", "dz"}
+            The direction in which to plot the deflection.
         """
                 
         # Import 'pyplot' if not already done
@@ -775,12 +938,13 @@ class Member3D():
         # Calculate the deflection diagram
         for i in range(20):
             
-            x.append(self.L / 19 * i)
-            d.append(self.Deflection(Direction, self.L / 19 * i))
+            x.append(self.L() / 19 * i)
+            d.append(self.Deflection(Direction, self.L() / 19 * i))
 
         Member3D.__plt.plot(x, d)
         Member3D.__plt.ylabel('Deflection')
         Member3D.__plt.xlabel('Location')
+        Member3D.__plt.title('Member ' + self.Name)
         Member3D.__plt.show()
         
 #%%    
@@ -788,7 +952,7 @@ class Member3D():
     def SegmentMember(self):
         
         # Get the member's length and stiffness properties
-        L = self.L
+        L = self.L()
         E = self.E
         Iz = self.Iz
         Iy = self.Iy
