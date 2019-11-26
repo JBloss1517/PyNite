@@ -7,16 +7,18 @@ import pytest
 from PyNite import FEModel3D
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def length():
     # 14ft = 168in
     return 14 * 12
 
 
 ### Fixtures of different configuration
+# -------------------------
 
 ## 2D Beams Configuration
-@pytest.fixture
+# -------------------------
+@pytest.fixture(scope="module")
 def simple_beam(length):
     SimpleBeam = FEModel3D()
 
@@ -25,8 +27,8 @@ def simple_beam(length):
     SimpleBeam.AddNode("N2", length, 0, 0)
 
     # Add a beam with the following properties:
-    # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    SimpleBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    # E = 29000 ksi, G = 11200 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
+    SimpleBeam.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Pin
     SimpleBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -35,7 +37,7 @@ def simple_beam(length):
     return SimpleBeam
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def pin_fixed_beam(length):
     PinFixBeam = FEModel3D()
 
@@ -44,8 +46,8 @@ def pin_fixed_beam(length):
     PinFixBeam.AddNode("N2", length, 0, 0)
 
     # Add a beam with the following properties:
-    # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    PinFixBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    # E = 29000 ksi, G = 11200 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
+    PinFixBeam.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Fixed
     PinFixBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -54,7 +56,7 @@ def pin_fixed_beam(length):
     return PinFixBeam
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def two_span_beam(length):
     TwoSpanBeam = FEModel3D()
 
@@ -64,9 +66,9 @@ def two_span_beam(length):
     TwoSpanBeam.AddNode("N3", length * 2, 0, 0)
 
     # Add a beam with the following properties:
-    # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    TwoSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
-    TwoSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    # E = 29000 ksi, G = 11200 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
+    TwoSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
+    TwoSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Roller, Roller
     TwoSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -76,7 +78,7 @@ def two_span_beam(length):
     return TwoSpanBeam
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def three_span_beam(length):
     ThreeSpanBeam = FEModel3D()
 
@@ -87,10 +89,10 @@ def three_span_beam(length):
     ThreeSpanBeam.AddNode("N4", length * 3, 0, 0)
 
     # Add a beam with the following properties:
-    # E = 29000 ksi, G = 11400 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
-    ThreeSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
-    ThreeSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
-    ThreeSpanBeam.AddMember("M3", "N3", "N4", E=29000, G=11400, Iy=100, Iz=150, J=250, A=20)
+    # E = 29000 ksi, G = 11200 ksi, Iy = 100 in^4, Iz = 150 in^4, J = 250 in^4, A = 20 in^2
+    ThreeSpanBeam.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
+    ThreeSpanBeam.AddMember("M2", "N2", "N3", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
+    ThreeSpanBeam.AddMember("M3", "N3", "N4", E=29000, G=11200, Iy=100, Iz=150, J=250, A=20)
 
     # Supports: Pin, Roller, Roller, Roller
     ThreeSpanBeam.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -101,9 +103,31 @@ def three_span_beam(length):
     return ThreeSpanBeam
 
 
-## 2D Frames Configuration
+@pytest.fixture(scope="module")
+def long_cantilever_500_members():
+    Cantilever = FEModel3D()
 
-@pytest.fixture
+    # Adding in 1001 nodes 1ft apart, building it out from left to right
+    for i in range(501):
+        Cantilever.AddNode(f"N{i + 1}", i, 0, 0)
+
+    # Adding in 1000 members end to end, building it out from left to right
+    # AISC W8x31
+    # E = 29000 ksi, G = 11200 ksi, Iy = 37.1 in^4, Iz = 110 in^4, J = 0.536 in^4, A = 9.13 in^2
+    for i in range(500):
+        Cantilever.AddMember(Name=f"M{i + 1}", iNode=f"N{i + 1}", jNode=f"N{i + 2}", E=29000, G=11200, Iy=37.1, Iz=110,
+                             J=0.536, A=9.13)
+
+    # Fixed end on left end
+    Cantilever.DefineSupport("N1", True, True, True, True, True, True)
+
+    return Cantilever
+
+
+## 2D Frames Configuration
+# -------------------------
+
+@pytest.fixture(scope="module")
 def two_member_frame_1():
     # Two member frame with one beam and one column. Column is on right.
     # Frame is taken from Example 16.1 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
@@ -113,8 +137,8 @@ def two_member_frame_1():
     Frame.AddNode("N2", X=20 * 12, Y=20 * 12, Z=0)
     Frame.AddNode("N3", X=20 * 12, Y=0, Z=0)
 
-    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=150, Iz=500, J=2, A=10)
-    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=150, Iz=500, J=2, A=10)
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=150, Iz=500, J=2, A=10)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11200, Iy=150, Iz=500, J=2, A=10)
 
     # N1: Roller, N3: Fixed
     Frame.DefineSupport("N1", SupportDX=False, SupportDY=True, SupportDZ=True, SupportRX=True)
@@ -123,7 +147,7 @@ def two_member_frame_1():
     return Frame
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def two_member_frame_2():
     # Two member frame with sloping beam up to flat beam. Flat beam is on right.
     # Frame is taken from Example 16.2 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
@@ -133,8 +157,8 @@ def two_member_frame_2():
     Frame.AddNode("N2", X=20 * 12, Y=15 * 12, Z=0)
     Frame.AddNode("N3", X=20 * 12 + 20 * 12, Y=15 * 12, Z=0)
 
-    Frame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=150, Iz=600, J=2, A=12)
-    Frame.AddMember("M2", "N2", "N3", E=29000, G=11400, Iy=150, Iz=600, J=2, A=12)
+    Frame.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=150, Iz=600, J=2, A=12)
+    Frame.AddMember("M2", "N2", "N3", E=29000, G=11200, Iy=150, Iz=600, J=2, A=12)
 
     # N1: Fixed, N3: Fixed
     Frame.DefineSupport("N1", SupportDX=True, SupportDY=True, SupportDZ=True, SupportRX=True, SupportRZ=True)
@@ -143,7 +167,7 @@ def two_member_frame_2():
     return Frame
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def three_member_frame_1():
     MomentFrame = FEModel3D()
 
@@ -155,10 +179,10 @@ def three_member_frame_1():
 
     # Add columns with the following properties:
     # AISC W8x31
-    # E = 29000 ksi, G = 11154 ksi, Iy = 37.1 in^4, Iz = 110 in^4, J = 0.536 in^4, A = 9.13 in^2
-    MomentFrame.AddMember("M1", "N1", "N2", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
-    MomentFrame.AddMember("M2", "N4", "N3", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
-    MomentFrame.AddMember("M3", "N2", "N3", E=29000, G=11400, Iy=37.1, Iz=110, J=0.536, A=9.13)
+    # E = 29000 ksi, G = 11200 ksi, Iy = 37.1 in^4, Iz = 110 in^4, J = 0.536 in^4, A = 9.13 in^2
+    MomentFrame.AddMember("M1", "N1", "N2", E=29000, G=11200, Iy=37.1, Iz=110, J=0.536, A=9.13)
+    MomentFrame.AddMember("M2", "N4", "N3", E=29000, G=11200, Iy=37.1, Iz=110, J=0.536, A=9.13)
+    MomentFrame.AddMember("M3", "N2", "N3", E=29000, G=11200, Iy=37.1, Iz=110, J=0.536, A=9.13)
 
     # Provide fixed supports at the bases of the columns
     MomentFrame.DefineSupport("N1", True, True, True, True, True, True)
@@ -168,6 +192,7 @@ def three_member_frame_1():
 
 
 ### 2D Beam fixtures with different load configurations
+# -------------------------
 
 @pytest.fixture
 def simple_beam_pt_load_1(simple_beam, length):
@@ -349,7 +374,35 @@ def three_span_beam_dist_load_3(three_span_beam, length):
     return _three_span_beam
 
 
+@pytest.fixture
+def long_cantilever_500_members_pt_load_1(long_cantilever_500_members):
+    # Adding a point load at very end of long beam
+
+    _long_cantilever_500_members = long_cantilever_500_members
+    _long_cantilever_500_members.AddNodeLoad("N501", "FY", 10)
+
+    # Analyze the beam
+    _long_cantilever_500_members.Analyze()
+
+    return _long_cantilever_500_members
+
+
+@pytest.fixture
+def long_cantilever_500_members_dist_load_1(long_cantilever_500_members):
+    # Adding a point load at very end of long beam
+
+    _long_cantilever_500_members = long_cantilever_500_members
+    for i in range(500):
+        _long_cantilever_500_members.AddMemberDistLoad(
+            Member=f"M{i + 1}", Direction="Fy", w1=-1.0, w2=-1.0, x1=0, x2=1.0)
+
+    # Analyze the beam
+    _long_cantilever_500_members.Analyze()
+
+    return _long_cantilever_500_members
+
 ## 2D frame fixtures with different load configurations
+# -------------------------
 
 @pytest.fixture
 def two_member_frame_1_lat_load(two_member_frame_1):

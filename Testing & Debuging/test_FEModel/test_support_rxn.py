@@ -161,6 +161,51 @@ def test_3_span_beam_supports(test_beam, expected):
     assert [rxn_1, rxn_2, rxn_3, rxn_4] == expected
 
 
+def test_long_cantilever_500_members_pt_load_1(long_cantilever_500_members_pt_load_1):
+    # Test to ensure rounding errors are not introduced when building long members.
+    # reactions at each end of the beam
+    rxn_1_X = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnFX, 2)
+    rxn_1_Y = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnFY, 2)
+    rxn_1_Z = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnFZ, 2)
+    rxn_1_MX = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnMX, 2)
+    rxn_1_MY = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnMY, 2)
+    rxn_1_MZ = round(long_cantilever_500_members_pt_load_1.GetNode("N1").RxnMZ, 2)
+    rxn_1 = (rxn_1_X, rxn_1_Y, rxn_1_Z, rxn_1_MX, rxn_1_MY, rxn_1_MZ)
+
+    expected_rxn_1_X = round(0.0, 2)
+    expected_rxn_1_Y = round(-10.0, 2)
+    expected_rxn_1_Z = round(0.0, 2)
+    expected_rxn_1_MX = round(0.0, 2)
+    expected_rxn_1_MY = round(0.0, 2)
+    expected_rxn_1_MZ = round(-10.0 * 500, 2)
+    expected_rxn_1 = (
+        expected_rxn_1_X, expected_rxn_1_Y, expected_rxn_1_Z, expected_rxn_1_MX, expected_rxn_1_MY, expected_rxn_1_MZ)
+
+    assert rxn_1 == expected_rxn_1
+
+
+def test_long_cantilever_500_members_dist_load_1(long_cantilever_500_members_dist_load_1):
+    # Test to ensure rounding errors are not introduced when building long members.
+    # reactions at each end of the beam
+    rxn_1_X = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnFX, 2)
+    rxn_1_Y = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnFY, 2)
+    rxn_1_Z = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnFZ, 2)
+    rxn_1_MX = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnMX, 2)
+    rxn_1_MY = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnMY, 2)
+    rxn_1_MZ = round(long_cantilever_500_members_dist_load_1.GetNode("N1").RxnMZ, 2)
+    rxn_1 = (rxn_1_X, rxn_1_Y, rxn_1_Z, rxn_1_MX, rxn_1_MY, rxn_1_MZ)
+
+    expected_rxn_1_X = round(0.0, 2)
+    expected_rxn_1_Y = round(-1 * 500, 2)
+    expected_rxn_1_Z = round(0.0, 2)
+    expected_rxn_1_MX = round(0.0, 2)
+    expected_rxn_1_MY = round(0.0, 2)
+    expected_rxn_1_MZ = round(-1 * (500 ** 2) / 2, 2)
+    expected_rxn_1 = (
+        expected_rxn_1_X, expected_rxn_1_Y, expected_rxn_1_Z, expected_rxn_1_MX, expected_rxn_1_MY, expected_rxn_1_MZ)
+
+    assert rxn_1 == expected_rxn_1
+
 ## Expected Results are derived from example 16.1 in textbook "Structural Analysis" by R.C. Hibbeler (8th Ed.)
 def test_two_member_frame_1_lat_load(two_member_frame_1_lat_load):
     Frame = two_member_frame_1_lat_load
